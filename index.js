@@ -1,33 +1,44 @@
 // Bot de discord preado especificamente para llevar un control de checkin y checkout de usuarios, creado por @Subervi__ y alojado en Replit para que sea 24/7 de forma gratuita.
 
 require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
 const moment = require('moment');
 const fs = require('fs'); 
 const path = require('path'); 
 const express = require('express'); // Agregar express
+const { Client, GatewayIntentBits } = require('discord.js');
+const { loadData, registerCheckin, registerCheckout } = require('./records');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 let checkInData = {}; 
 
-const loadData = () => {
-    const filePath = path.join(__dirname, 'registros.json');
-    if (fs.existsSync(filePath)) {
-        const data = fs.readFileSync(filePath);
-        checkInData = JSON.parse(data);
-    }
-};
 
 const saveData = () => {
-    const filePath = path.join(__dirname, 'registros.json');
-    fs.writeFileSync(filePath, JSON.stringify(checkInData, null, 2));
+    const filePath = path.join(__dirname, 'records.json');
+    fs.writeFileSync(filePath, JSON.stringify(records, null, 2));
 };
 
 client.once('ready', () => {
-    console.log('El bot está listo!');
-    loadData(); 
+    console.log(`Logged in as ${client.user.tag}!`);
+    loadData(); // Load records when the bot starts
 });
+
+client.on('messageCreate', message => {
+    if (message.content.startsWith('!checkin')) {
+        const user = message.author.id;
+        const time = new Date().toISOString();
+        registerCheckin(user, time);
+        message.reply('Check-in registered.');
+    }
+
+    if (message.content.startsWith('!checkout')) {
+        const user = message.author.id;
+        const time = new Date().toISOString();
+        registerCheckout(user, time);
+        message.reply('Check-out registered.');
+    }
+});
+
 // Aquí viene el código del servidor HTTP
 const server = express(); // Crear el servidor
 
